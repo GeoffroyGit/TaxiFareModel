@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 import mlflow
 from mlflow.tracking import MlflowClient
 from memoized_property import memoized_property
+import joblib
 
 MLFLOW_URI = "https://mlflow.lewagon.ai/"
 EXPERIMENT_NAME = "[FR] [Nantes] [GeoffroyGit] TaxiFareModel + v01"
@@ -86,6 +87,10 @@ class Trainer():
         self.mlflow_log_metric("rmse", rmse)
         return rmse
 
+    def save_model(self, ):
+        """ Save the trained model into a model.joblib file """
+        joblib.dump(self.pipeline, "taxi.joblib")
+
 
 if __name__ == "__main__":
     # get data
@@ -103,3 +108,5 @@ if __name__ == "__main__":
     # evaluate
     rmse = trainer.evaluate(X_val, y_val)
     print(rmse)
+    # save
+    trainer.save_model()

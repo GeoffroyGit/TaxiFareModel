@@ -50,6 +50,7 @@ class Trainer():
 
         self.experiment_name = EXPERIMENT_NAME
 
+        self.mlflow_run()
         self.mlflow_log_param("student_name", "Geoffroy")
 
     def set_pipeline(self):

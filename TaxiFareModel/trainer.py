@@ -11,9 +11,9 @@ import mlflow
 from mlflow.tracking import MlflowClient
 from memoized_property import memoized_property
 import joblib
-
-MLFLOW_URI = "https://mlflow.lewagon.ai/"
-EXPERIMENT_NAME = "[FR] [Nantes] [GeoffroyGit] TaxiFareModel + v01"
+from TaxiFareModel.params import MLFLOW_URI, EXPERIMENT_NAME
+from TaxiFareModel.params import PATH_TO_LOCAL_MODEL
+from TaxiFareModel.data import upload_model_to_gcp
 
 class Trainer():
 
@@ -50,7 +50,7 @@ class Trainer():
 
         self.experiment_name = EXPERIMENT_NAME
 
-        self.mlflow_run()
+        #self.mlflow_run()
         self.mlflow_log_param("student_name", "Geoffroy")
 
     def set_pipeline(self):
@@ -90,7 +90,9 @@ class Trainer():
 
     def save_model(self, ):
         """ Save the trained model into a model.joblib file """
-        joblib.dump(self.pipeline, "taxi.joblib")
+        joblib.dump(self.pipeline, PATH_TO_LOCAL_MODEL)
+        # and upload the joblib file to GCP
+        upload_model_to_gcp(PATH_TO_LOCAL_MODEL)
 
 
 if __name__ == "__main__":

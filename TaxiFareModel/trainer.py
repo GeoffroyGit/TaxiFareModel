@@ -14,6 +14,7 @@ import joblib
 from TaxiFareModel.params import MLFLOW_URI, EXPERIMENT_NAME
 from TaxiFareModel.params import PATH_TO_LOCAL_MODEL
 from TaxiFareModel.data import upload_model_to_gcp
+from xgboost import XGBRegressor
 
 class Trainer():
 
@@ -39,7 +40,7 @@ class Trainer():
     def mlflow_log_metric(self, key, value):
         self.mlflow_client.log_metric(self.mlflow_run.info.run_id, key, value)
 
-    def __init__(self, X, y):
+    def __init__(self, X, y, **kwargs):
         """
             X: pandas DataFrame
             y: pandas Series
@@ -52,6 +53,8 @@ class Trainer():
 
         #self.mlflow_run()
         self.mlflow_log_param("student_name", "Geoffroy")
+
+        self.kwargs = kwargs
 
     def set_pipeline(self):
         """defines the pipeline as a class attribute"""
@@ -67,12 +70,19 @@ class Trainer():
             ('distance', dist_pipe, ["pickup_latitude", "pickup_longitude", 'dropoff_latitude', 'dropoff_longitude']),
             ('time', time_pipe, ['pickup_datetime'])
         ], remainder="drop")
-        pipe = Pipeline([
-            ('preproc', preproc_pipe),
-            ('linear_model', LinearRegression())
-        ])
+
+        if self.kwargs["estimator"] == "xgboost":
+            pipe = Pipeline([
+                ('preproc', preproc_pipe),
+                ('model', XGBRegressor())
+            ])
+        else:
+            pipe = Pipeline([
+                ('preproc', preproc_pipe),
+                ('model', LinearRegression())
+            ])
         # add model type to MLflow
-        self.mlflow_log_param("model", type(pipe["linear_model"]))
+        self.mlflow_log_param("model", type(pipe["model"]))
         self.pipeline = pipe
 
     def run(self):
@@ -96,6 +106,20 @@ class Trainer():
 
 
 if __name__ == "__main__":
+
+    params = dict(nrows=10000,
+              upload=True,
+              local=False,  # set to False to get data from GCP (Storage or BigQuery)
+              gridsearch=False,
+              optimize=True,
+              estimator="xgboost",
+              mlflow=True,  # set to True to log params to mlflow
+              #experiment_name=experiment,
+              pipeline_memory=None, # None if no caching and True if caching expected
+              distance_type="manhattan",
+              feateng=["distance_to_center", "direction", "distance", "time_features", "geohash"],
+              n_jobs=-1) # Try with njobs=1 and njobs = -1
+
     # get data
     df = get_data()
     # clean data
@@ -106,7 +130,7 @@ if __name__ == "__main__":
     # hold out
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.15)
     # train
-    trainer = Trainer(X_train, y_train)
+    trainer = Trainer(X_train, y_train, **params)
     trainer.run()
     # evaluate
     rmse = trainer.evaluate(X_val, y_val)

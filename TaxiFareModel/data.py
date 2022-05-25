@@ -3,12 +3,16 @@ from google.cloud import storage
 from TaxiFareModel.params import LOCAL_PATH
 from TaxiFareModel.params import BUCKET_NAME, BUCKET_STORAGE_PATH, BUCKET_TRAIN_DATA_PATH
 
+from TaxiFareModel.utils import df_optimize
 
 def get_data(nrows=10_000):
     '''returns a DataFrame with nrows from s3 bucket'''
     #df = pd.read_csv(AWS_BUCKET_PATH, nrows=nrows)
     #df = pd.read_csv(LOCAL_PATH, nrows=nrows)
     df = pd.read_csv(f"gs://{BUCKET_NAME}/{BUCKET_TRAIN_DATA_PATH}", nrows=nrows)
+
+    df = df_optimize(df)
+
     return df
 
 
